@@ -1,0 +1,76 @@
+﻿@using Microsoft.EntityFrameworkCore
+
+@page "/categorias/nueva"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Nueva categoría</PageTitle>
+
+<h1>Nueva categoría</h1>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+
+        <EditForm Model="categoria" OnValidSubmit="GuardarCategoria">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label class="form-label">Nombre</label>
+
+                <InputText class="form-control"
+                           @bind-Value="categoria.Nombre" />
+
+                <ValidationMessage For="@(() => categoria.Nombre)" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Descripción</label>
+
+                <InputTextArea class="form-control"
+                               @bind-Value="categoria.Descripcion" />
+
+                <ValidationMessage For="@(() => categoria.Descripcion)" />
+            </div>
+
+            <div class="form-check mb-3">
+                <InputCheckbox class="form-check-input"
+                               @bind-Value="categoria.Activo" />
+
+                <label class="form-check-label">
+                    Activa
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Guardar
+            </button>
+
+            <a href="/categorias" class="btn btn-secondary ms-2">
+                Cancelar
+            </a>
+
+        </EditForm>
+
+    </div>
+</div>
+
+@code {
+    private Categoria categoria = new();
+
+    private async Task GuardarCategoria()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
+        db.Categorias.Add(categoria);
+
+        await db.SaveChangesAsync();
+
+        Navigation.NavigateTo("/categorias");
+    }
+}
