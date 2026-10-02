@@ -1,0 +1,93 @@
+﻿@page "/admin"
+
+@using AppWebPedidos.Components.Layout
+
+@layout AdminLayout
+
+<PageTitle>Administración</PageTitle>
+
+<div class="sp-admin-page-header">
+
+    <div>
+
+        <h1>
+            Administración
+        </h1>
+
+        <p>
+            Gestioná la información del restaurante.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="row g-4">
+
+    <div class="col-md-4">
+
+        <a href="/categorias"
+           class="sp-admin-dashboard-card">
+
+            <div class="sp-admin-dashboard-icon">
+                ▦
+            </div>
+
+            <h3>
+                Categorías
+            </h3>
+
+            <p>
+                Administrar categorías de productos.
+            </p>
+
+        </a>
+
+    </div>
+
+
+    <div class="col-md-4">
+
+        <a href="/platos"
+           class="sp-admin-dashboard-card">
+
+            <div class="sp-admin-dashboard-icon">
+                🍽️
+            </div>
+
+            <h3>
+                Platos
+            </h3>
+
+            <p>
+                Gestionar productos, precios e imágenes.
+            </p>
+
+        </a>
+
+    </div>
+
+
+    <div class="col-md-4">
+
+        <a href="/pedidos"
+           class="sp-admin-dashboard-card">
+
+            <div class="sp-admin-dashboard-icon">
+                ▤
+            </div>
+
+            <h3>
+                Pedidos
+            </h3>
+
+            <p>
+                Revisar pedidos y cambiar sus estados.
+            </p>
+
+        </a>
+
+    </div>
+
+</div>

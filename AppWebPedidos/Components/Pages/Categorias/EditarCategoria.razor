@@ -3,11 +3,15 @@
 @using AppWebPedidos.Data
 @using AppWebPedidos.Models
 @using Microsoft.EntityFrameworkCore
+@using AppWebPedidos.Components.Layout
+
+@layout AdminLayout
 
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Navigation
 
 <PageTitle>Editar categoría</PageTitle>
+
 
 @if (categoria is null)
 {
@@ -15,68 +19,136 @@
 }
 else
 {
-    <h1>Editar categoría</h1>
+    <div class="sp-admin-form-wrapper">
 
-    <hr />
+        <a href="/categorias"
+           class="sp-admin-back">
+            ← Volver a categorías
+        </a>
 
-    <div class="row">
-        <div class="col-md-6">
 
-            <EditForm Model="categoria" OnValidSubmit="GuardarCambios">
+        <div class="sp-admin-page-header">
+
+            <div>
+
+                <h1>
+                    Editar categoría
+                </h1>
+
+                <p>
+                    Modificá la información de @categoria.Nombre.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="sp-admin-form-card">
+
+            <h2>
+                Datos de la categoría
+            </h2>
+
+            <p class="sp-admin-form-description">
+                Los cambios se reflejarán en el panel administrativo
+                y en la carta.
+            </p>
+
+
+            <EditForm Model="categoria"
+                      OnValidSubmit="GuardarCambios">
+
                 <DataAnnotationsValidator />
 
-                <div class="mb-3">
-                    <label class="form-label">Nombre</label>
+                <ValidationSummary />
+
+
+                <div class="mb-4">
+
+                    <label class="sp-admin-form-label">
+                        Nombre
+                    </label>
 
                     <InputText class="form-control"
                                @bind-Value="categoria.Nombre" />
 
                     <ValidationMessage For="@(() => categoria.Nombre)" />
+
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Descripción</label>
+
+                <div class="mb-4">
+
+                    <label class="sp-admin-form-label">
+                        Descripción
+                    </label>
 
                     <InputTextArea class="form-control"
-                                   @bind-Value="categoria.Descripcion" />
+                                   @bind-Value="categoria.Descripcion"
+                                   rows="4" />
 
-                    <ValidationMessage For="@(() => categoria.Descripcion)" />
                 </div>
 
-                <div class="form-check mb-3">
+
+                <div class="form-check">
+
                     <InputCheckbox class="form-check-input"
                                    @bind-Value="categoria.Activo" />
 
                     <label class="form-check-label">
-                        Activa
+                        Categoría activa
                     </label>
+
                 </div>
 
-                <button type="submit" class="btn btn-primary">
-                    Guardar cambios
-                </button>
 
-                <a href="/categorias" class="btn btn-secondary ms-2">
-                    Cancelar
-                </a>
+                <div class="sp-admin-form-actions">
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        Guardar cambios
+
+                    </button>
+
+
+                    <a href="/categorias"
+                       class="btn btn-outline-primary">
+
+                        Cancelar
+
+                    </a>
+
+                </div>
+
             </EditForm>
 
         </div>
+
     </div>
 }
 
+
 @code {
+
     [Parameter]
     public int Id { get; set; }
 
+
     private Categoria? categoria;
+
 
     protected override async Task OnInitializedAsync()
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
 
         categoria = await db.Categorias
-            .FirstOrDefaultAsync(c => c.IdCategoria == Id);
+            .FirstOrDefaultAsync(
+                c => c.IdCategoria == Id
+            );
+
 
         if (categoria is null)
         {
@@ -84,17 +156,24 @@ else
         }
     }
 
+
     private async Task GuardarCambios()
     {
         if (categoria is null)
             return;
 
-        await using var db = await DbFactory.CreateDbContextAsync();
+
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
 
         db.Categorias.Update(categoria);
 
+
         await db.SaveChangesAsync();
+
 
         Navigation.NavigateTo("/categorias");
     }
+
 }

@@ -1,0 +1,197 @@
+﻿@page "/platos"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using Microsoft.EntityFrameworkCore
+@using AppWebPedidos.Components.Layout
+
+@layout AdminLayout
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<PageTitle>Platos</PageTitle>
+
+
+<div class="sp-admin-page-header">
+
+    <div>
+
+        <h1>
+            Platos
+        </h1>
+
+        <p>
+            Gestioná los productos, precios e imágenes de la carta.
+        </p>
+
+    </div>
+
+
+    <a href="/platos/nuevo"
+       class="btn btn-primary">
+
+        + Nuevo plato
+
+    </a>
+
+</div>
+
+
+@if (platos is null)
+{
+    <p>Cargando platos...</p>
+}
+else if (platos.Count == 0)
+{
+    <div class="alert alert-light">
+        No hay platos registrados.
+    </div>
+}
+else
+{
+    <div class="sp-admin-table-card">
+
+        <div class="table-responsive">
+
+            <table class="table sp-admin-table">
+
+                <thead>
+
+                    <tr>
+                        <th></th>
+                        <th>Plato</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @foreach (var plato in platos)
+                    {
+                        <tr>
+
+                            <td>
+
+                                @if (!string.IsNullOrWhiteSpace(plato.ImagenUrl))
+                                {
+                                    <img src="@plato.ImagenUrl"
+                                         alt="@plato.Nombre"
+                                         class="sp-admin-thumbnail" />
+                                }
+                                else
+                                {
+                                    <div class="sp-admin-thumbnail-placeholder">
+                                        🍽️
+                                    </div>
+                                }
+
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    @plato.Nombre
+                                </strong>
+
+                                @if (!string.IsNullOrWhiteSpace(plato.Descripcion))
+                                {
+                                    <div class="text-muted small">
+                                        @plato.Descripcion
+                                    </div>
+                                }
+
+                            </td>
+
+
+                            <td>
+                                @plato.Categoria?.Nombre
+                            </td>
+
+
+                            <td>
+
+                                <strong class="text-sp-orange">
+                                    $@plato.Precio.ToString("N2")
+                                </strong>
+
+                            </td>
+
+
+                            <td>
+
+                                @if (plato.Disponible)
+                                {
+                                    <span class="sp-status sp-status-confirmado">
+                                        Disponible
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="sp-status sp-status-cancelado">
+                                        No disponible
+                                    </span>
+                                }
+
+                            </td>
+
+
+                            <td>
+
+                                <div class="sp-action-group">
+
+                                    <a href="/platos/editar/@plato.IdPlato"
+                                       class="sp-action-button sp-action-edit">
+
+                                        Editar
+
+                                    </a>
+
+
+                                    <a href="/platos/eliminar/@plato.IdPlato"
+                                       class="sp-action-button sp-action-delete">
+
+                                        Eliminar
+
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+}
+
+
+@code {
+
+    private List<Plato>? platos;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+        platos = await db.Platos
+            .Include(p => p.Categoria)
+            .AsNoTracking()
+            .OrderBy(p => p.Nombre)
+            .ToListAsync();
+    }
+
+}

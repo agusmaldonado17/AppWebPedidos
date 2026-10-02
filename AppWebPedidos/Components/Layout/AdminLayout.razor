@@ -1,0 +1,112 @@
+﻿@inherits LayoutComponentBase
+
+<div class="sp-admin-shell">
+
+    <aside class="sp-admin-sidebar">
+
+        <div class="sp-admin-brand">
+
+            <div class="sp-admin-brand-icon">
+                ◆
+            </div>
+
+            <div>
+                <div class="sp-admin-brand-name">
+                    Pedidos
+                </div>
+
+                <div class="sp-admin-brand-subtitle">
+                    DELIVERY DE COMIDA
+                </div>
+            </div>
+
+        </div>
+
+
+        <nav class="sp-admin-nav">
+
+            <NavLink class="sp-admin-link"
+                     href="/admin"
+                     Match="NavLinkMatch.All">
+
+                <span>⌂</span>
+                Inicio
+
+            </NavLink>
+
+
+            <NavLink class="sp-admin-link"
+                     href="/categorias">
+
+                <span>▦</span>
+                Categorías
+
+            </NavLink>
+
+
+            <NavLink class="sp-admin-link"
+                     href="/platos">
+
+                <span>◉</span>
+                Platos
+
+            </NavLink>
+
+
+            <NavLink class="sp-admin-link"
+                     href="/pedidos">
+
+                <span>▤</span>
+                Pedidos
+
+            </NavLink>
+
+        </nav>
+
+
+        <div class="sp-admin-sidebar-footer">
+
+            <a href="/cliente"
+               class="sp-admin-public-link">
+                ← Ir al panel cliente
+            </a>
+
+            <a href="/"
+               class="sp-admin-public-link">
+                ← Cambiar de panel
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <div class="sp-admin-content">
+
+        <header class="sp-admin-topbar">
+
+            <div>
+                <strong>Panel de administración</strong>
+
+                <span>
+                    Gestión del restaurante
+                </span>
+            </div>
+
+            <a href="/carta"
+               class="btn btn-outline-primary">
+
+                Ver carta
+
+            </a>
+
+        </header>
+
+
+        <main class="sp-admin-main">
+            @Body
+        </main>
+
+    </div>
+
+</div>

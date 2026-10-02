@@ -1,71 +1,141 @@
-﻿@using Microsoft.EntityFrameworkCore
-
-@page "/categorias/nueva"
+﻿@page "/categorias/nueva"
 
 @using AppWebPedidos.Data
 @using AppWebPedidos.Models
+@using AppWebPedidos.Components.Layout
+@using Microsoft.EntityFrameworkCore
+
+@layout AdminLayout
 
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Navigation
 
 <PageTitle>Nueva categoría</PageTitle>
 
-<h1>Nueva categoría</h1>
 
-<hr />
+<div class="sp-admin-form-wrapper">
 
-<div class="row">
-    <div class="col-md-6">
+    <a href="/categorias"
+       class="sp-admin-back">
+        ← Volver a categorías
+    </a>
 
-        <EditForm Model="categoria" OnValidSubmit="GuardarCategoria">
+
+    <div class="sp-admin-page-header">
+
+        <div>
+
+            <h1>
+                Nueva categoría
+            </h1>
+
+            <p>
+                Creá una nueva categoría para organizar los platos.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="sp-admin-form-card">
+
+        <h2>
+            Datos de la categoría
+        </h2>
+
+        <p class="sp-admin-form-description">
+            Completá la información principal.
+        </p>
+
+
+        <EditForm Model="categoria"
+                  OnValidSubmit="GuardarCategoria">
+
             <DataAnnotationsValidator />
 
-            <div class="mb-3">
-                <label class="form-label">Nombre</label>
+            <ValidationSummary />
+
+
+            <div class="mb-4">
+
+                <label class="sp-admin-form-label">
+                    Nombre
+                </label>
 
                 <InputText class="form-control"
-                           @bind-Value="categoria.Nombre" />
+                           @bind-Value="categoria.Nombre"
+                           placeholder="Ej: Pizzas" />
 
                 <ValidationMessage For="@(() => categoria.Nombre)" />
+
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Descripción</label>
+
+            <div class="mb-4">
+
+                <label class="sp-admin-form-label">
+                    Descripción
+                </label>
 
                 <InputTextArea class="form-control"
-                               @bind-Value="categoria.Descripcion" />
+                               @bind-Value="categoria.Descripcion"
+                               rows="4"
+                               placeholder="Descripción de la categoría..." />
 
-                <ValidationMessage For="@(() => categoria.Descripcion)" />
             </div>
 
-            <div class="form-check mb-3">
+
+            <div class="form-check">
+
                 <InputCheckbox class="form-check-input"
                                @bind-Value="categoria.Activo" />
 
                 <label class="form-check-label">
-                    Activa
+                    Categoría activa
                 </label>
+
             </div>
 
-            <button type="submit" class="btn btn-primary">
-                Guardar
-            </button>
 
-            <a href="/categorias" class="btn btn-secondary ms-2">
-                Cancelar
-            </a>
+            <div class="sp-admin-form-actions">
+
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    Guardar categoría
+
+                </button>
+
+
+                <a href="/categorias"
+                   class="btn btn-outline-primary">
+
+                    Cancelar
+
+                </a>
+
+            </div>
 
         </EditForm>
 
     </div>
+
 </div>
 
+
 @code {
-    private Categoria categoria = new();
+
+    private Categoria categoria = new()
+    {
+        Activo = true
+    };
+
 
     private async Task GuardarCategoria()
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
 
         db.Categorias.Add(categoria);
 
@@ -73,4 +143,5 @@
 
         Navigation.NavigateTo("/categorias");
     }
+
 }

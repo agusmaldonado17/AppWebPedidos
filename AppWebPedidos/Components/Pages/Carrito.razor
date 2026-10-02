@@ -1,0 +1,471 @@
+﻿@page "/carrito"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using AppWebPedidos.Services
+@using Microsoft.EntityFrameworkCore
+
+@inject CarritoService CarritoSvc
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Tu pedido</PageTitle>
+
+<section class="sp-cart-page">
+
+    <div class="sp-container">
+
+        <a href="/carta"
+           class="sp-back-link">
+            ← Seguir comprando
+        </a>
+
+        <div class="sp-cart-heading">
+            <h1 class="display-title">
+                Tu
+                <span class="text-accent">
+                    pedido
+                </span>
+            </h1>
+
+            <p class="sp-cart-intro">
+                Revisá tus platos, ajustá las cantidades
+                y agregá las observaciones que necesites.
+            </p>
+        </div>
+
+
+        @if (!CarritoSvc.Items.Any())
+        {
+            <div class="sp-empty-cart">
+
+                <div class="sp-empty-icon">
+                    🛒
+                </div>
+
+                <h2>Tu carrito está vacío</h2>
+
+                <p>
+                    Todavía no agregaste ningún plato.
+                </p>
+
+                <a href="/carta"
+                   class="btn btn-primary">
+                    Ver carta
+                </a>
+
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+
+                <!-- =========================
+                     PRODUCTOS
+                     ========================= -->
+
+                <div class="col-lg-8">
+
+                    <div class="d-flex flex-column gap-3">
+
+                        @foreach (var item in CarritoSvc.Items)
+                        {
+                            <article class="sp-cart-item">
+
+                                <!-- IMAGEN -->
+
+                                <div class="sp-cart-item-image">
+
+                                    @if (!string.IsNullOrWhiteSpace(item.ImagenUrl))
+                                    {
+                                        <img src="@item.ImagenUrl"
+                                             alt="@item.Nombre" />
+                                    }
+                                    else
+                                    {
+                                        <div class="sp-cart-image-placeholder">
+                                            🍽️
+                                        </div>
+                                    }
+
+                                </div>
+
+
+                                <!-- INFORMACIÓN -->
+
+                                <div class="sp-cart-item-content">
+
+                                    <div class="sp-cart-item-header">
+
+                                        <div>
+
+                                            <h3>
+                                                @item.Nombre
+                                            </h3>
+
+                                            <div>
+                                                <strong class="sp-product-price">
+                                                    $@item.Precio.ToString("N2")
+                                                </strong>
+
+                                                <span class="sp-price-unit">
+                                                    c/u
+                                                </span>
+                                            </div>
+
+                                        </div>
+
+
+                                        <button type="button"
+                                                class="sp-delete-button"
+                                                title="Eliminar plato"
+                                                @onclick="() => Eliminar(item.IdPlato)">
+                                            ×
+                                        </button>
+
+                                    </div>
+
+
+                                    <div class="sp-cart-controls">
+
+                                        <!-- CANTIDAD -->
+
+                                        <div>
+
+                                            <span class="sp-cart-control-label">
+                                                Cantidad
+                                            </span>
+
+                                            <div class="sp-quantity">
+
+                                                <button type="button"
+                                                        @onclick="() => Disminuir(item.IdPlato)">
+                                                    −
+                                                </button>
+
+                                                <span>
+                                                    @item.Cantidad
+                                                </span>
+
+                                                <button type="button"
+                                                        class="add"
+                                                        @onclick="() => Aumentar(item.IdPlato)">
+                                                    +
+                                                </button>
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <!-- OBSERVACIONES -->
+
+                                        <div class="sp-cart-observation">
+
+                                            <label>
+                                                Observaciones
+                                                <span>(opcional)</span>
+                                            </label>
+
+                                            <InputText class="form-control"
+                                                       @bind-Value="item.Observacion"
+                                                       placeholder="Ej: sin cebolla, extra queso..." />
+
+                                        </div>
+
+
+                                        <!-- SUBTOTAL -->
+
+                                        <div class="sp-cart-subtotal">
+
+                                            <small>
+                                                Subtotal
+                                            </small>
+
+                                            <strong>
+                                                $@item.Subtotal.ToString("N2")
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </article>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <!-- =========================
+                     RESUMEN
+                     ========================= -->
+
+                <div class="col-lg-4">
+
+                    <aside class="sp-order-summary">
+
+                        <div class="sp-summary-title">
+
+                            <span class="sp-summary-icon">
+                                🌿
+                            </span>
+
+                            <h2>
+                                Resumen del pedido
+                            </h2>
+
+                        </div>
+
+
+                        <div class="sp-summary-row">
+
+                            <span>
+                                Productos
+                            </span>
+
+                            <strong>
+                                @CarritoSvc.CantidadTotal
+                            </strong>
+
+                        </div>
+
+
+                        <div class="sp-summary-row">
+
+                            <span>
+                                Subtotal
+                            </span>
+
+                            <strong>
+                                $@CarritoSvc.Total.ToString("N2")
+                            </strong>
+
+                        </div>
+
+
+                        <hr />
+
+
+                        <div class="sp-summary-total">
+
+                            <span>
+                                Total
+                            </span>
+
+                            <strong>
+                                $@CarritoSvc.Total.ToString("N2")
+                            </strong>
+
+                        </div>
+
+
+                        <!-- DATOS CLIENTE -->
+
+                        <div class="sp-customer-section">
+
+                            <h3>
+                                Tus datos
+                            </h3>
+
+                            <p>
+                                Completá la información para confirmar el pedido.
+                            </p>
+
+
+                            <div class="mb-3">
+
+                                <label class="form-label">
+                                    Nombre
+                                </label>
+
+                                <InputText class="form-control"
+                                           @bind-Value="nombreCliente"
+                                           placeholder="Nombre completo" />
+
+                            </div>
+
+
+                            <div class="mb-3">
+
+                                <label class="form-label">
+                                    Teléfono
+                                </label>
+
+                                <InputText class="form-control"
+                                           @bind-Value="telefono"
+                                           placeholder="Ej: 2954 123456" />
+
+                            </div>
+
+
+                            <div class="mb-3">
+
+                                <label class="form-label">
+                                    Dirección
+                                </label>
+
+                                <InputText class="form-control"
+                                           @bind-Value="direccion"
+                                           placeholder="Dirección de entrega" />
+
+                            </div>
+
+
+                            @if (!string.IsNullOrWhiteSpace(mensajeError))
+                            {
+                                <div class="alert alert-danger">
+                                    @mensajeError
+                                </div>
+                            }
+
+
+                            <button class="btn btn-primary btn-lg w-100"
+                                    @onclick="ConfirmarPedido">
+
+                                Confirmar pedido →
+
+                            </button>
+
+
+                            <a href="/carta"
+                               class="btn btn-outline-primary w-100 mt-2">
+
+                                Seguir comprando
+
+                            </a>
+
+                        </div>
+
+                    </aside>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+
+</section>
+
+
+@code {
+
+    private string nombreCliente = string.Empty;
+
+    private string? telefono;
+
+    private string? direccion;
+
+    private string? mensajeError;
+
+
+    private void Aumentar(int idPlato)
+    {
+        CarritoSvc.AumentarCantidad(idPlato);
+    }
+
+
+    private void Disminuir(int idPlato)
+    {
+        CarritoSvc.DisminuirCantidad(idPlato);
+    }
+
+
+    private void Eliminar(int idPlato)
+    {
+        CarritoSvc.Eliminar(idPlato);
+    }
+
+
+    private async Task ConfirmarPedido()
+    {
+        mensajeError = null;
+
+
+        if (!CarritoSvc.Items.Any())
+        {
+            mensajeError =
+                "El carrito está vacío.";
+
+            return;
+        }
+
+
+        if (string.IsNullOrWhiteSpace(nombreCliente))
+        {
+            mensajeError =
+                "Ingresá el nombre del cliente.";
+
+            return;
+        }
+
+
+        var pedido = new Pedido
+        {
+            NombreCliente =
+                nombreCliente.Trim(),
+
+            Telefono =
+                string.IsNullOrWhiteSpace(telefono)
+                    ? null
+                    : telefono.Trim(),
+
+            Direccion =
+                string.IsNullOrWhiteSpace(direccion)
+                    ? null
+                    : direccion.Trim(),
+
+            Fecha = DateTime.Now,
+
+            Estado = "Pendiente",
+
+            Total = CarritoSvc.Total
+        };
+
+
+        foreach (var item in CarritoSvc.Items)
+        {
+            pedido.Detalles.Add(
+                new DetallePedido
+                {
+                    IdPlato = item.IdPlato,
+
+                    Cantidad = item.Cantidad,
+
+                    PrecioUnitario = item.Precio,
+
+                    Observacion =
+                        string.IsNullOrWhiteSpace(item.Observacion)
+                            ? null
+                            : item.Observacion.Trim()
+                }
+            );
+        }
+
+
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        db.Pedidos.Add(pedido);
+
+
+        await db.SaveChangesAsync();
+
+
+        var idPedido =
+            pedido.IdPedido;
+
+
+        CarritoSvc.Vaciar();
+
+
+        Navigation.NavigateTo(
+            $"/pedido-confirmado/{idPedido}"
+        );
+    }
+}

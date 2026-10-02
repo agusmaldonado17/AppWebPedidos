@@ -1,0 +1,310 @@
+﻿@page "/platos/eliminar/{Id:int}"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using AppWebPedidos.Components.Layout
+@using Microsoft.EntityFrameworkCore
+
+@layout AdminLayout
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IWebHostEnvironment Env
+
+<PageTitle>Eliminar plato</PageTitle>
+
+
+@if (plato is null)
+{
+    <p>Cargando plato...</p>
+}
+else
+{
+    <div>
+
+        <a href="/platos"
+           class="sp-admin-back">
+            ← Volver a platos
+        </a>
+
+
+        <div class="sp-admin-page-header">
+
+            <div>
+
+                <h1>Eliminar plato</h1>
+
+                <p>
+                    Revisá la información antes de continuar.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="sp-delete-card">
+
+            <div class="sp-delete-icon">
+                !
+            </div>
+
+
+            <h2>
+                ¿Eliminar @plato.Nombre?
+            </h2>
+
+
+            @if (tienePedidos)
+            {
+                <div class="alert alert-warning mt-3">
+
+                    Este plato aparece en uno o más pedidos
+                    registrados y no puede eliminarse.
+
+                    <br /><br />
+
+                    Podés editarlo y marcarlo como
+                    <strong>No disponible</strong>
+                    para ocultarlo de la carta.
+
+                </div>
+            }
+            else
+            {
+                <p>
+                    Esta acción eliminará permanentemente
+                    el plato seleccionado.
+                </p>
+            }
+
+
+            @if (!string.IsNullOrWhiteSpace(plato.ImagenUrl))
+            {
+                <img src="@plato.ImagenUrl"
+                     alt="@plato.Nombre"
+                     class="sp-delete-product-image" />
+            }
+
+
+            <div class="sp-delete-summary">
+
+                <div class="sp-delete-summary-row">
+
+                    <span>Nombre</span>
+
+                    <strong>
+                        @plato.Nombre
+                    </strong>
+
+                </div>
+
+
+                <div class="sp-delete-summary-row">
+
+                    <span>Categoría</span>
+
+                    <strong>
+                        @plato.Categoria?.Nombre
+                    </strong>
+
+                </div>
+
+
+                <div class="sp-delete-summary-row">
+
+                    <span>Precio</span>
+
+                    <strong class="text-sp-orange">
+                        $@plato.Precio.ToString("N2")
+                    </strong>
+
+                </div>
+
+
+                <div class="sp-delete-summary-row">
+
+                    <span>Estado</span>
+
+                    <strong>
+                        @(plato.Disponible
+                            ? "Disponible"
+                            : "No disponible")
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="sp-admin-form-actions">
+
+                @if (!tienePedidos)
+                {
+                    <button type="button"
+                            class="sp-btn-danger"
+                            @onclick="ConfirmarEliminacion">
+
+                        Eliminar definitivamente
+
+                    </button>
+                }
+
+
+                @if (tienePedidos && plato.Disponible)
+                {
+                    <button type="button"
+                            class="btn btn-primary"
+                            @onclick="MarcarNoDisponible">
+
+                        Marcar como no disponible
+
+                    </button>
+                }
+
+
+                <a href="/platos"
+                   class="btn btn-outline-primary">
+
+                    Cancelar
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+
+    private Plato? plato;
+
+    private bool tienePedidos;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        plato = await db.Platos
+            .Include(p => p.Categoria)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                p => p.IdPlato == Id
+            );
+
+
+        if (plato is null)
+        {
+            Navigation.NavigateTo("/platos");
+            return;
+        }
+
+
+        tienePedidos = await db.DetallesPedido
+            .AnyAsync(
+                d => d.IdPlato == Id
+            );
+    }
+
+
+    private async Task ConfirmarEliminacion()
+    {
+        if (plato is null || tienePedidos)
+            return;
+
+
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        var platoDb =
+            await db.Platos.FindAsync(Id);
+
+
+        if (platoDb is null)
+        {
+            Navigation.NavigateTo("/platos");
+            return;
+        }
+
+
+        var imagen =
+            platoDb.ImagenUrl;
+
+
+        db.Platos.Remove(platoDb);
+
+        await db.SaveChangesAsync();
+
+
+        EliminarImagen(imagen);
+
+
+        Navigation.NavigateTo("/platos");
+    }
+
+
+    private async Task MarcarNoDisponible()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        var platoDb =
+            await db.Platos.FindAsync(Id);
+
+
+        if (platoDb is null)
+            return;
+
+
+        platoDb.Disponible = false;
+
+
+        await db.SaveChangesAsync();
+
+
+        Navigation.NavigateTo("/platos");
+    }
+
+
+    private void EliminarImagen(
+        string? imagen)
+    {
+        if (string.IsNullOrWhiteSpace(imagen))
+            return;
+
+
+        if (!imagen.StartsWith("/images/platos/"))
+            return;
+
+
+        var nombreArchivo =
+            Path.GetFileName(imagen);
+
+
+        var ruta = Path.Combine(
+            Env.WebRootPath,
+            "images",
+            "platos",
+            nombreArchivo
+        );
+
+
+        if (File.Exists(ruta))
+        {
+            File.Delete(ruta);
+        }
+    }
+
+}

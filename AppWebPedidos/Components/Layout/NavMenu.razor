@@ -1,30 +1,103 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">AppWebPedidos</a>
+﻿@using AppWebPedidos.Services
+
+@inject CarritoService CarritoSvc
+
+@implements IDisposable
+
+<header class="sp-navbar">
+
+    <div class="sp-navbar-inner">
+
+        <NavLink class="sp-brand"
+                 href="/cliente">
+
+            <span class="sp-brand-icon">
+                ◆
+            </span>
+
+            <div>
+                <div class="sp-brand-name">
+                    Pedidos
+                </div>
+
+                <div class="sp-brand-subtitle">
+                    DELIVERY DE COMIDA
+                </div>
+            </div>
+
+        </NavLink>
+
+
+        <nav class="sp-nav-links">
+
+            <NavLink class="sp-nav-link"
+                     href="/cliente"
+                     Match="NavLinkMatch.All">
+
+                Inicio
+
+            </NavLink>
+
+
+            <NavLink class="sp-nav-link"
+                     href="/carta">
+
+                Carta
+
+            </NavLink>
+
+        </nav>
+
+
+        <div class="sp-nav-actions">
+
+            <a href="/"
+               class="sp-change-panel">
+                Cambiar panel
+            </a>
+
+
+            <NavLink href="/carrito"
+                     class="sp-cart-button">
+
+                <span class="sp-cart-icon">
+                    🛒
+                </span>
+
+
+                @if (CarritoSvc.CantidadTotal > 0)
+                {
+                    <span class="sp-cart-count">
+                        @CarritoSvc.CantidadTotal
+                    </span>
+                }
+
+            </NavLink>
+
+        </div>
+
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+</header>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+@code {
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
+    protected override void OnInitialized()
+    {
+        CarritoSvc.OnChange += Actualizar;
+    }
 
+
+    private void Actualizar()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+
+    public void Dispose()
+    {
+        CarritoSvc.OnChange -= Actualizar;
+    }
+
+}

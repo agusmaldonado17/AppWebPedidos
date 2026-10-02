@@ -1,0 +1,192 @@
+﻿@page "/carta"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using AppWebPedidos.Services
+@using Microsoft.EntityFrameworkCore
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject CarritoService Carrito
+
+<PageTitle>Nuestra carta</PageTitle>
+
+<section class="sp-menu-header">
+
+    <div class="sp-container">
+
+        <span class="sp-hero-badge">
+            Preparado al momento
+        </span>
+
+        <h1 class="display-title">
+            Nuestra
+            <span class="text-accent">
+                carta
+            </span>
+        </h1>
+
+        <p class="sp-menu-description">
+            Elegí tus platos favoritos y armá tu pedido.
+        </p>
+
+    </div>
+
+</section>
+
+<section class="pb-5">
+
+    <div class="sp-container">
+
+        <div class="sp-category-bar">
+
+            <button class="sp-category-button
+                    @(idCategoriaSeleccionada is null ? "active" : "")"
+                    @onclick="() => SeleccionarCategoria(null)">
+
+                Todos
+
+            </button>
+
+            @foreach (var categoria in categorias)
+            {
+                <button class="sp-category-button
+                        @(idCategoriaSeleccionada == categoria.IdCategoria
+                            ? "active"
+                            : "")"
+                        @onclick="() => SeleccionarCategoria(categoria.IdCategoria)">
+
+                    @categoria.Nombre
+
+                </button>
+            }
+
+        </div>
+
+        @if (platos is null)
+        {
+            <p>Cargando carta...</p>
+        }
+        else if (!PlatosFiltrados.Any())
+        {
+            <div class="alert alert-light">
+                No hay platos disponibles en esta categoría.
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+
+                @foreach (var plato in PlatosFiltrados)
+                {
+                    <div class="col-sm-6 col-lg-4">
+
+                        <article class="sp-product-card">
+
+                            @if (!string.IsNullOrWhiteSpace(plato.ImagenUrl))
+                            {
+                                <img src="@plato.ImagenUrl"
+                                     alt="@plato.Nombre"
+                                     class="sp-product-image" />
+                            }
+                            else
+                            {
+                                <div class="sp-product-image-placeholder">
+                                    🍽️
+                                </div>
+                            }
+
+                            <div class="sp-product-body">
+
+                                <span class="sp-category-label">
+                                    @plato.Categoria?.Nombre
+                                </span>
+
+                                <div class="d-flex justify-content-between gap-3">
+
+                                    <h3>
+                                        @plato.Nombre
+                                    </h3>
+
+                                    <strong class="sp-product-price">
+                                        $@plato.Precio.ToString("N2")
+                                    </strong>
+
+                                </div>
+
+                                <p>
+                                    @plato.Descripcion
+                                </p>
+
+                                <button class="btn btn-primary w-100"
+                                        @onclick="() => AgregarAlCarrito(plato)">
+
+                                    Agregar al pedido +
+
+                                </button>
+
+                            </div>
+
+                        </article>
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+
+</section>
+
+@code {
+
+    private List<Plato>? platos;
+
+    private List<Categoria> categorias = new();
+
+    private int? idCategoriaSeleccionada;
+
+
+    private IEnumerable<Plato> PlatosFiltrados =>
+        idCategoriaSeleccionada is null
+            ? platos ?? Enumerable.Empty<Plato>()
+            : platos?.Where(
+                p => p.IdCategoria == idCategoriaSeleccionada
+              ) ?? Enumerable.Empty<Plato>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+        categorias = await db.Categorias
+            .Where(c => c.Activo)
+            .OrderBy(c => c.Nombre)
+            .AsNoTracking()
+            .ToListAsync();
+
+        platos = await db.Platos
+            .Include(p => p.Categoria)
+            .Where(
+                p =>
+                    p.Disponible &&
+                    p.Categoria!.Activo
+            )
+            .OrderBy(p => p.Nombre)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+
+    private void SeleccionarCategoria(int? idCategoria)
+    {
+        idCategoriaSeleccionada = idCategoria;
+    }
+
+
+    private void AgregarAlCarrito(Plato plato)
+    {
+        Carrito.Agregar(plato);
+    }
+}

@@ -1,6 +1,8 @@
 using AppWebPedidos.Components;
 using AppWebPedidos.Data;
+using AppWebPedidos.Services;
 using Microsoft.EntityFrameworkCore;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,8 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")!
     )
 );
+
+builder.Services.AddScoped<CarritoService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

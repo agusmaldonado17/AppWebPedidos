@@ -1,0 +1,196 @@
+﻿@page "/pedidos"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using Microsoft.EntityFrameworkCore
+@using AppWebPedidos.Components.Layout
+
+@layout AdminLayout
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<PageTitle>Pedidos</PageTitle>
+
+
+<div class="sp-admin-page-header">
+
+    <div>
+
+        <h1>
+            Gestión de pedidos
+        </h1>
+
+        <p>
+            Revisá y gestioná todos los pedidos registrados.
+        </p>
+
+    </div>
+
+</div>
+
+
+@if (pedidos is null)
+{
+    <p>Cargando pedidos...</p>
+}
+else if (pedidos.Count == 0)
+{
+    <div class="alert alert-light">
+        No hay pedidos registrados.
+    </div>
+}
+else
+{
+    <div class="sp-admin-table-card">
+
+        <div class="table-responsive">
+
+            <table class="table sp-admin-table">
+
+                <thead>
+
+                    <tr>
+                        <th>N°</th>
+                        <th>Cliente</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Total</th>
+                        <th>Acciones</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @foreach (var pedido in pedidos)
+                    {
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    #@pedido.IdPedido
+                                </strong>
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    @pedido.NombreCliente
+                                </strong>
+
+                                @if (!string.IsNullOrWhiteSpace(pedido.Telefono))
+                                {
+                                    <div class="text-muted small">
+                                        @pedido.Telefono
+                                    </div>
+                                }
+
+                            </td>
+
+
+                            <td>
+                                @pedido.Fecha.ToString("dd/MM/yyyy HH:mm")
+                            </td>
+
+
+                            <td>
+
+                                <span class="sp-status @ObtenerClaseEstado(pedido.Estado)">
+                                    @pedido.Estado
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    $@pedido.Total.ToString("N2")
+                                </strong>
+
+                            </td>
+
+
+                            <td>
+
+                                <div class="sp-action-group">
+
+                                    <a href="/pedidos/detalle/@pedido.IdPedido"
+                                       class="sp-action-button sp-action-view">
+
+                                        Ver
+
+                                    </a>
+
+
+                                    <a href="/pedidos/eliminar/@pedido.IdPedido"
+                                       class="sp-action-button sp-action-delete">
+
+                                        Eliminar
+
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+}
+
+
+@code {
+
+    private List<Pedido>? pedidos;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+        pedidos = await db.Pedidos
+            .AsNoTracking()
+            .OrderByDescending(p => p.Fecha)
+            .ToListAsync();
+    }
+
+
+    private string ObtenerClaseEstado(string estado)
+    {
+        return estado switch
+        {
+            "Pendiente" =>
+                "sp-status-pendiente",
+
+            "Confirmado" =>
+                "sp-status-confirmado",
+
+            "En preparación" =>
+                "sp-status-preparacion",
+
+            "Listo" =>
+                "sp-status-listo",
+
+            "Entregado" =>
+                "sp-status-entregado",
+
+            "Cancelado" =>
+                "sp-status-cancelado",
+
+            _ =>
+                "sp-status-pendiente"
+        };
+    }
+
+}

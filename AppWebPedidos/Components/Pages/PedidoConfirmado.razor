@@ -1,0 +1,147 @@
+﻿@page "/pedido-confirmado/{Id:int}"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using Microsoft.EntityFrameworkCore
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<PageTitle>Pedido confirmado</PageTitle>
+
+
+<section class="sp-confirm-page">
+
+    <div class="sp-confirm-card">
+
+        <div class="sp-confirm-icon">
+            ✓
+        </div>
+
+
+        <span class="sp-confirm-label">
+            PEDIDO REGISTRADO
+        </span>
+
+
+        <h1>
+            ¡Gracias por tu pedido!
+        </h1>
+
+
+        @if (pedido is null)
+        {
+            <p>
+                Cargando información...
+            </p>
+        }
+        else
+        {
+            <p class="sp-confirm-description">
+                Tu pedido fue registrado correctamente.
+            </p>
+
+
+            <div class="sp-confirm-number">
+
+                <span>
+                    Número de pedido
+                </span>
+
+                <strong>
+                    #@pedido.IdPedido
+                </strong>
+
+            </div>
+
+
+            <div class="sp-confirm-info">
+
+                <div>
+
+                    <span>
+                        Cliente
+                    </span>
+
+                    <strong>
+                        @pedido.NombreCliente
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Estado
+                    </span>
+
+                    <strong>
+                        @pedido.Estado
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong class="text-sp-orange">
+                        $@pedido.Total.ToString("N2")
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="sp-confirm-actions">
+
+                <a href="/carta"
+                   class="btn btn-primary">
+
+                    Hacer otro pedido
+
+                </a>
+
+
+                <a href="/cliente"
+                   class="btn btn-outline-primary">
+
+                    Volver al inicio
+
+                </a>
+
+            </div>
+        }
+
+    </div>
+
+</section>
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+
+    private Pedido? pedido;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        pedido = await db.Pedidos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                p => p.IdPedido == Id
+            );
+    }
+
+}

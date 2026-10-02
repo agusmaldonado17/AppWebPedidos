@@ -1,0 +1,212 @@
+﻿@page "/categorias/eliminar/{Id:int}"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using Microsoft.EntityFrameworkCore
+@using AppWebPedidos.Components.Layout
+
+@layout AdminLayout
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Eliminar categoría</PageTitle>
+
+
+@if (categoria is null)
+{
+    <p>Cargando categoría...</p>
+}
+else
+{
+    <div>
+
+        <a href="/categorias"
+           class="sp-admin-back">
+            ← Volver a categorías
+        </a>
+
+
+        <div class="sp-admin-page-header">
+
+            <div>
+
+                <h1>
+                    Eliminar categoría
+                </h1>
+
+                <p>
+                    Revisá la información antes de continuar.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="sp-delete-card">
+
+            <div class="sp-delete-icon">
+                !
+            </div>
+
+
+            <h2>
+                ¿Eliminar @categoria.Nombre?
+            </h2>
+
+
+            @if (tienePlatos)
+            {
+                <div class="alert alert-warning mt-3">
+
+                    Esta categoría tiene platos asociados y
+                    no puede eliminarse.
+
+                    <br />
+
+                    Primero eliminá o reasigná los platos
+                    pertenecientes a esta categoría.
+
+                </div>
+            }
+            else
+            {
+                <p>
+                    Esta acción eliminará permanentemente
+                    la categoría seleccionada.
+                </p>
+            }
+
+
+            <div class="sp-delete-summary">
+
+                <div class="sp-delete-summary-row">
+
+                    <span>
+                        ID
+                    </span>
+
+                    <strong>
+                        #@categoria.IdCategoria
+                    </strong>
+
+                </div>
+
+
+                <div class="sp-delete-summary-row">
+
+                    <span>
+                        Nombre
+                    </span>
+
+                    <strong>
+                        @categoria.Nombre
+                    </strong>
+
+                </div>
+
+
+                <div class="sp-delete-summary-row">
+
+                    <span>
+                        Estado
+                    </span>
+
+                    <strong>
+                        @(categoria.Activo ? "Activa" : "Inactiva")
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="sp-admin-form-actions">
+
+                @if (!tienePlatos)
+                {
+                    <button type="button"
+                            class="sp-btn-danger"
+                            @onclick="ConfirmarEliminacion">
+                        Eliminar definitivamente
+                    </button>
+                }
+
+
+                <a href="/categorias"
+                   class="btn btn-outline-primary">
+                    Cancelar
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+
+    private Categoria? categoria;
+
+    private bool tienePlatos;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        categoria = await db.Categorias
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.IdCategoria == Id);
+
+
+        if (categoria is null)
+        {
+            Navigation.NavigateTo("/categorias");
+            return;
+        }
+
+
+        tienePlatos = await db.Platos
+            .AnyAsync(p => p.IdCategoria == Id);
+    }
+
+
+    private async Task ConfirmarEliminacion()
+    {
+        if (categoria is null || tienePlatos)
+            return;
+
+
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        var categoriaDb =
+            await db.Categorias.FindAsync(Id);
+
+
+        if (categoriaDb is null)
+        {
+            Navigation.NavigateTo("/categorias");
+            return;
+        }
+
+
+        db.Categorias.Remove(categoriaDb);
+
+        await db.SaveChangesAsync();
+
+        Navigation.NavigateTo("/categorias");
+    }
+
+}

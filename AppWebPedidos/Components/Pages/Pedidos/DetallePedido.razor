@@ -1,0 +1,399 @@
+﻿@page "/pedidos/detalle/{Id:int}"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using AppWebPedidos.Components.Layout
+@using Microsoft.EntityFrameworkCore
+
+@layout AdminLayout
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Detalle del pedido</PageTitle>
+
+
+@if (pedido is null)
+{
+    <p>Cargando pedido...</p>
+}
+else
+{
+    <div>
+
+        <a href="/pedidos"
+           class="sp-admin-back">
+            ← Volver a pedidos
+        </a>
+
+
+        <div class="sp-admin-page-header">
+
+            <div>
+
+                <h1>
+                    Pedido #@pedido.IdPedido
+                </h1>
+
+                <p>
+                    Información completa y gestión del estado.
+                </p>
+
+            </div>
+
+
+            <span class="sp-status @ObtenerClaseEstado(pedido.Estado)">
+                @pedido.Estado
+            </span>
+
+        </div>
+
+
+        <div class="row g-4">
+
+            <!-- DATOS DEL PEDIDO -->
+
+            <div class="col-lg-8">
+
+                <div class="sp-admin-detail-card">
+
+                    <div class="sp-admin-detail-title">
+
+                        <div>
+                            <h2>Detalle del pedido</h2>
+
+                            <p>
+                                Productos incluidos en la compra.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="sp-order-products">
+
+                        @foreach (var detalle in pedido.Detalles)
+                        {
+                            <div class="sp-order-product">
+
+                                <div class="sp-order-product-image">
+
+                                    @if (!string.IsNullOrWhiteSpace(detalle.Plato?.ImagenUrl))
+                                    {
+                                        <img src="@detalle.Plato.ImagenUrl"
+                                             alt="@detalle.Plato.Nombre" />
+                                    }
+                                    else
+                                    {
+                                        <div class="sp-order-product-placeholder">
+                                            🍽️
+                                        </div>
+                                    }
+
+                                </div>
+
+
+                                <div class="sp-order-product-info">
+
+                                    <h3>
+                                        @(detalle.Plato?.Nombre ?? "Plato")
+                                    </h3>
+
+                                    <span>
+                                        @detalle.Cantidad ×
+                                        $@detalle.PrecioUnitario.ToString("N2")
+                                    </span>
+
+
+                                    @if (!string.IsNullOrWhiteSpace(detalle.Observacion))
+                                    {
+                                        <div class="sp-order-observation">
+                                            <strong>Observación:</strong>
+                                            @detalle.Observacion
+                                        </div>
+                                    }
+
+                                </div>
+
+
+                                <div class="sp-order-product-total">
+
+                                    <span>
+                                        Subtotal
+                                    </span>
+
+                                    <strong>
+                                        $@((detalle.Cantidad * detalle.PrecioUnitario).ToString("N2"))
+                                    </strong>
+
+                                </div>
+
+                            </div>
+                        }
+
+                    </div>
+
+
+                    <div class="sp-order-grand-total">
+
+                        <span>
+                            Total del pedido
+                        </span>
+
+                        <strong>
+                            $@pedido.Total.ToString("N2")
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- INFORMACIÓN LATERAL -->
+
+            <div class="col-lg-4">
+
+                <div class="sp-admin-detail-card mb-4">
+
+                    <h2>
+                        Cliente
+                    </h2>
+
+
+                    <div class="sp-detail-info-row">
+
+                        <span>Nombre</span>
+
+                        <strong>
+                            @pedido.NombreCliente
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sp-detail-info-row">
+
+                        <span>Teléfono</span>
+
+                        <strong>
+                            @(string.IsNullOrWhiteSpace(pedido.Telefono)
+                                ? "No informado"
+                                : pedido.Telefono)
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sp-detail-info-row">
+
+                        <span>Dirección</span>
+
+                        <strong>
+                            @(string.IsNullOrWhiteSpace(pedido.Direccion)
+                                ? "No informada"
+                                : pedido.Direccion)
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sp-detail-info-row">
+
+                        <span>Fecha</span>
+
+                        <strong>
+                            @pedido.Fecha.ToString("dd/MM/yyyy HH:mm")
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ESTADO -->
+
+                <div class="sp-admin-detail-card">
+
+                    <h2>
+                        Estado del pedido
+                    </h2>
+
+                    <p class="sp-admin-form-description">
+                        Actualizá el estado según el avance del pedido.
+                    </p>
+
+
+                    <label class="sp-admin-form-label">
+                        Estado
+                    </label>
+
+
+                    <InputSelect class="form-select"
+                                 @bind-Value="estadoSeleccionado">
+
+                        @foreach (var estado in estados)
+                        {
+                            <option value="@estado">
+                                @estado
+                            </option>
+                        }
+
+                    </InputSelect>
+
+
+                    @if (!string.IsNullOrWhiteSpace(mensajeEstado))
+                    {
+                        <div class="alert alert-success mt-3">
+                            @mensajeEstado
+                        </div>
+                    }
+
+
+                    <button type="button"
+                            class="btn btn-primary w-100 mt-3"
+                            @onclick="ActualizarEstado">
+
+                        Guardar estado
+
+                    </button>
+
+
+                    <a href="/pedidos/eliminar/@pedido.IdPedido"
+                       class="sp-detail-delete-link">
+
+                        Eliminar pedido
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+
+    private Pedido? pedido;
+
+    private string estadoSeleccionado = "Pendiente";
+
+    private string? mensajeEstado;
+
+
+    private readonly List<string> estados = new()
+    {
+        "Pendiente",
+        "Confirmado",
+        "En preparación",
+        "Listo",
+        "Entregado",
+        "Cancelado"
+    };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPedido();
+    }
+
+
+    private async Task CargarPedido()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        pedido = await db.Pedidos
+            .Include(p => p.Detalles)
+                .ThenInclude(d => d.Plato)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                p => p.IdPedido == Id
+            );
+
+
+        if (pedido is null)
+        {
+            Navigation.NavigateTo("/pedidos");
+            return;
+        }
+
+
+        estadoSeleccionado =
+            pedido.Estado;
+    }
+
+
+    private async Task ActualizarEstado()
+    {
+        if (pedido is null)
+            return;
+
+
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        var pedidoDb =
+            await db.Pedidos.FindAsync(Id);
+
+
+        if (pedidoDb is null)
+            return;
+
+
+        pedidoDb.Estado =
+            estadoSeleccionado;
+
+
+        await db.SaveChangesAsync();
+
+
+        pedido.Estado =
+            estadoSeleccionado;
+
+
+        mensajeEstado =
+            "Estado actualizado correctamente.";
+    }
+
+
+    private string ObtenerClaseEstado(
+        string estado)
+    {
+        return estado switch
+        {
+            "Pendiente" =>
+                "sp-status-pendiente",
+
+            "Confirmado" =>
+                "sp-status-confirmado",
+
+            "En preparación" =>
+                "sp-status-preparacion",
+
+            "Listo" =>
+                "sp-status-listo",
+
+            "Entregado" =>
+                "sp-status-entregado",
+
+            "Cancelado" =>
+                "sp-status-cancelado",
+
+            _ =>
+                "sp-status-pendiente"
+        };
+    }
+
+}

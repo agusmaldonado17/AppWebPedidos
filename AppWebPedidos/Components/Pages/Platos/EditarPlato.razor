@@ -1,0 +1,454 @@
+﻿@page "/platos/editar/{Id:int}"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using AppWebPedidos.Components.Layout
+@using Microsoft.EntityFrameworkCore
+
+@layout AdminLayout
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IWebHostEnvironment Env
+
+<PageTitle>Editar plato</PageTitle>
+
+
+@if (plato is null)
+{
+    <p>Cargando plato...</p>
+}
+else
+{
+    <div class="sp-admin-form-wrapper">
+
+        <a href="/platos"
+           class="sp-admin-back">
+            ← Volver a platos
+        </a>
+
+
+        <div class="sp-admin-page-header">
+
+            <div>
+
+                <h1>Editar plato</h1>
+
+                <p>
+                    Modificá la información de @plato.Nombre.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="sp-admin-form-card">
+
+            <h2>Datos del plato</h2>
+
+            <p class="sp-admin-form-description">
+                Los cambios se reflejarán automáticamente
+                en la carta.
+            </p>
+
+
+            <EditForm Model="plato"
+                      OnValidSubmit="GuardarCambios">
+
+                <DataAnnotationsValidator />
+
+                <ValidationSummary />
+
+
+                <!-- CATEGORÍA -->
+
+                <div class="mb-4">
+
+                    <label class="sp-admin-form-label">
+                        Categoría
+                    </label>
+
+                    <InputSelect class="form-select"
+                                 @bind-Value="plato.IdCategoria">
+
+                        @foreach (var categoria in categorias)
+                        {
+                            <option value="@categoria.IdCategoria">
+                                @categoria.Nombre
+                            </option>
+                        }
+
+                    </InputSelect>
+
+                    <ValidationMessage For="@(() => plato.IdCategoria)" />
+
+                </div>
+
+
+                <!-- NOMBRE -->
+
+                <div class="mb-4">
+
+                    <label class="sp-admin-form-label">
+                        Nombre
+                    </label>
+
+                    <InputText class="form-control"
+                               @bind-Value="plato.Nombre" />
+
+                    <ValidationMessage For="@(() => plato.Nombre)" />
+
+                </div>
+
+
+                <!-- DESCRIPCIÓN -->
+
+                <div class="mb-4">
+
+                    <label class="sp-admin-form-label">
+                        Descripción
+                    </label>
+
+                    <InputTextArea class="form-control"
+                                   @bind-Value="plato.Descripcion"
+                                   rows="4" />
+
+                    <ValidationMessage For="@(() => plato.Descripcion)" />
+
+                </div>
+
+
+                <!-- PRECIO -->
+
+                <div class="mb-4">
+
+                    <label class="sp-admin-form-label">
+                        Precio
+                    </label>
+
+                    <InputNumber class="form-control"
+                                 @bind-Value="plato.Precio" />
+
+                    <ValidationMessage For="@(() => plato.Precio)" />
+
+                </div>
+
+
+                <!-- IMAGEN -->
+
+                <div class="mb-4">
+
+                    <label class="sp-admin-form-label">
+                        Imagen
+                    </label>
+
+
+                    @if (!string.IsNullOrWhiteSpace(plato.ImagenUrl))
+                    {
+                        <div class="sp-current-image">
+
+                            <span>
+                                Imagen actual
+                            </span>
+
+                            <img src="@plato.ImagenUrl"
+                                 alt="@plato.Nombre"
+                                 class="sp-image-preview" />
+
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light">
+                            Este plato todavía no tiene una imagen.
+                        </div>
+                    }
+
+
+                    <div class="sp-upload-box mt-3">
+
+                        <InputFile class="form-control"
+                                   OnChange="CargarImagen"
+                                   accept=".jpg,.jpeg,.png,.webp" />
+
+                        <small>
+                            Seleccioná una imagen solamente
+                            si querés reemplazar la actual.
+                            JPG, JPEG, PNG o WEBP. Máximo 5 MB.
+                        </small>
+
+                    </div>
+
+
+                    @if (!string.IsNullOrWhiteSpace(mensajeImagen))
+                    {
+                        <div class="text-danger mt-2">
+                            @mensajeImagen
+                        </div>
+                    }
+
+                </div>
+
+
+                <!-- DISPONIBLE -->
+
+                <div class="form-check">
+
+                    <InputCheckbox class="form-check-input"
+                                   @bind-Value="plato.Disponible" />
+
+                    <label class="form-check-label">
+                        Disponible en la carta
+                    </label>
+
+                </div>
+
+
+                <!-- BOTONES -->
+
+                <div class="sp-admin-form-actions">
+
+                    <button type="submit"
+                            class="btn btn-primary">
+
+                        Guardar cambios
+
+                    </button>
+
+
+                    <a href="/platos"
+                       class="btn btn-outline-primary">
+
+                        Cancelar
+
+                    </a>
+
+                </div>
+
+            </EditForm>
+
+        </div>
+
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+
+    private Plato? plato;
+
+    private List<Categoria> categorias = new();
+
+    private string? mensajeImagen;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        plato = await db.Platos
+            .FirstOrDefaultAsync(
+                p => p.IdPlato == Id
+            );
+
+
+        if (plato is null)
+        {
+            Navigation.NavigateTo("/platos");
+
+            return;
+        }
+
+
+        categorias = await db.Categorias
+            .Where(c => c.Activo)
+            .OrderBy(c => c.Nombre)
+            .AsNoTracking()
+            .ToListAsync();
+
+
+        /*
+         * Si por alguna razón el plato pertenece a una
+         * categoría actualmente inactiva, también la agregamos
+         * al select para no perder la categoría al editar.
+         */
+
+        if (!categorias.Any(
+                c => c.IdCategoria == plato.IdCategoria))
+        {
+            var categoriaActual =
+                await db.Categorias
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        c => c.IdCategoria == plato.IdCategoria
+                    );
+
+
+            if (categoriaActual is not null)
+            {
+                categorias.Add(categoriaActual);
+
+                categorias =
+                    categorias
+                        .OrderBy(c => c.Nombre)
+                        .ToList();
+            }
+        }
+    }
+
+
+    private async Task CargarImagen(
+        InputFileChangeEventArgs e)
+    {
+        if (plato is null)
+            return;
+
+
+        mensajeImagen = null;
+
+
+        var archivo = e.File;
+
+
+        var extension = Path
+            .GetExtension(archivo.Name)
+            .ToLowerInvariant();
+
+
+        string[] extensionesPermitidas =
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp"
+        };
+
+
+        if (!extensionesPermitidas.Contains(extension))
+        {
+            mensajeImagen =
+                "Formato de imagen no permitido.";
+
+            return;
+        }
+
+
+        const long tamanoMaximo =
+            5 * 1024 * 1024;
+
+
+        if (archivo.Size > tamanoMaximo)
+        {
+            mensajeImagen =
+                "La imagen no puede superar los 5 MB.";
+
+            return;
+        }
+
+
+        var imagenAnterior =
+            plato.ImagenUrl;
+
+
+        var nombreArchivo =
+            $"{Guid.NewGuid()}{extension}";
+
+
+        var carpeta =
+            Path.Combine(
+                Env.WebRootPath,
+                "images",
+                "platos"
+            );
+
+
+        Directory.CreateDirectory(carpeta);
+
+
+        var rutaArchivo =
+            Path.Combine(
+                carpeta,
+                nombreArchivo
+            );
+
+
+        await using var stream =
+            new FileStream(
+                rutaArchivo,
+                FileMode.Create
+            );
+
+
+        await archivo
+            .OpenReadStream(tamanoMaximo)
+            .CopyToAsync(stream);
+
+
+        plato.ImagenUrl =
+            $"/images/platos/{nombreArchivo}";
+
+
+        EliminarImagenAnterior(
+            imagenAnterior
+        );
+    }
+
+
+    private void EliminarImagenAnterior(
+        string? imagenAnterior)
+    {
+        if (string.IsNullOrWhiteSpace(imagenAnterior))
+            return;
+
+
+        if (!imagenAnterior.StartsWith("/images/platos/"))
+            return;
+
+
+        var nombreArchivo =
+            Path.GetFileName(imagenAnterior);
+
+
+        var rutaAnterior =
+            Path.Combine(
+                Env.WebRootPath,
+                "images",
+                "platos",
+                nombreArchivo
+            );
+
+
+        if (File.Exists(rutaAnterior))
+        {
+            File.Delete(rutaAnterior);
+        }
+    }
+
+
+    private async Task GuardarCambios()
+    {
+        if (plato is null)
+            return;
+
+
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        db.Platos.Update(plato);
+
+
+        await db.SaveChangesAsync();
+
+
+        Navigation.NavigateTo("/platos");
+    }
+
+}

@@ -3,18 +3,39 @@
 @using AppWebPedidos.Data
 @using AppWebPedidos.Models
 @using Microsoft.EntityFrameworkCore
+@using AppWebPedidos.Components.Layout
+
+@layout AdminLayout
 
 @inject IDbContextFactory<AppDbContext> DbFactory
 
 <PageTitle>Categorías</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Categorías</h1>
 
-    <a class="btn btn-primary" href="/categorias/nueva">
-        Nueva categoría
+<div class="sp-admin-page-header">
+
+    <div>
+
+        <h1>
+            Categorías
+        </h1>
+
+        <p>
+            Organizá los productos disponibles en la carta.
+        </p>
+
+    </div>
+
+
+    <a href="/categorias/nueva"
+       class="btn btn-primary">
+
+        + Nueva categoría
+
     </a>
+
 </div>
+
 
 @if (categorias is null)
 {
@@ -22,81 +43,124 @@
 }
 else if (categorias.Count == 0)
 {
-    <div class="alert alert-info">
+    <div class="alert alert-light">
         No hay categorías registradas.
     </div>
 }
 else
 {
-    <table class="table table-striped table-hover align-middle">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
+    <div class="sp-admin-table-card">
 
-        <tbody>
-            @foreach (var categoria in categorias)
-            {
-                <tr>
-                    <td>@categoria.IdCategoria</td>
+        <div class="table-responsive">
 
-                    <td>@categoria.Nombre</td>
+            <table class="table sp-admin-table">
 
-                    <td>@categoria.Descripcion</td>
+                <thead>
 
-                    <td>
-                        @if (categoria.Activo)
-                        {
-                            <span class="badge bg-success">
-                                Activa
-                            </span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">
-                                Inactiva
-                            </span>
-                        }
-                    </td>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
 
-                    <td>
-                        <a class="btn btn-sm btn-warning"
-                           href="/categorias/editar/@categoria.IdCategoria">
-                            Editar
-                        </a>
+                </thead>
 
-                        <a class="btn btn-sm btn-danger"
-                           href="/categorias/eliminar/@categoria.IdCategoria">
-                            Eliminar
-                        </a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+
+                <tbody>
+
+                    @foreach (var categoria in categorias)
+                    {
+                        <tr>
+
+                            <td>
+                                #@categoria.IdCategoria
+                            </td>
+
+
+                            <td>
+
+                                <strong>
+                                    @categoria.Nombre
+                                </strong>
+
+                            </td>
+
+
+                            <td>
+                                @categoria.Descripcion
+                            </td>
+
+
+                            <td>
+
+                                @if (categoria.Activo)
+                                {
+                                    <span class="sp-status sp-status-confirmado">
+                                        Activa
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="sp-status sp-status-cancelado">
+                                        Inactiva
+                                    </span>
+                                }
+
+                            </td>
+
+
+                            <td>
+
+                                <div class="sp-action-group">
+
+                                    <a href="/categorias/editar/@categoria.IdCategoria"
+                                       class="sp-action-button sp-action-edit">
+
+                                        Editar
+
+                                    </a>
+
+
+                                    <a href="/categorias/eliminar/@categoria.IdCategoria"
+                                       class="sp-action-button sp-action-delete">
+
+                                        Eliminar
+
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
 }
+
 
 @code {
 
     private List<Categoria>? categorias;
 
+
     protected override async Task OnInitializedAsync()
     {
-        await CargarCategorias();
-    }
-
-    private async Task CargarCategorias()
-    {
-        await using var db = await DbFactory.CreateDbContextAsync();
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
 
         categorias = await db.Categorias
             .AsNoTracking()
             .OrderBy(c => c.Nombre)
             .ToListAsync();
     }
+
 }

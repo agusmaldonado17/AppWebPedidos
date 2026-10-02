@@ -1,0 +1,193 @@
+﻿@page "/cliente"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using Microsoft.EntityFrameworkCore
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<PageTitle>Pedidos</PageTitle>
+
+<section class="sp-hero">
+
+    <div class="sp-container">
+
+        <div class="row align-items-center g-5">
+
+            <div class="col-lg-6">
+
+                <div class="sp-hero-badge">
+                    Pedí fácil, comé rico
+                </div>
+
+                <h1 class="display-title sp-hero-title">
+                    Comida que hace
+                    <span class="text-accent">
+                        buenos momentos
+                    </span>
+                </h1>
+
+                <p class="sp-hero-description">
+                    Elegí tus platos favoritos, armá tu pedido
+                    y disfrutá comida preparada especialmente
+                    para vos.
+                </p>
+
+                <div class="d-flex gap-3 flex-wrap">
+
+                    <a href="/carta"
+                       class="btn btn-primary btn-lg">
+                        Ver carta →
+                    </a>
+
+                    <a href="/pedidos"
+                       class="btn btn-outline-primary btn-lg">
+                        Ver pedidos
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-6">
+
+                <div class="sp-hero-photo">
+
+                    <div class="sp-hero-photo-placeholder">
+
+                        <div>
+                            <span>🍕</span>
+
+                            <p>
+                                Acá vamos a colocar una fotografía
+                                real de comida.
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="sp-hero-floating">
+                        <span>🌿</span>
+
+                        <div>
+                            <strong>Ingredientes frescos</strong>
+                            <small>Preparados al momento</small>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<section class="sp-section">
+
+    <div class="sp-container">
+
+        <div class="mb-4">
+            <h2 class="sp-section-title">
+                Platos destacados
+            </h2>
+
+            <p class="text-muted-custom">
+                Algunas opciones de nuestra carta.
+            </p>
+        </div>
+
+        @if (platosDestacados is null)
+        {
+            <p>Cargando platos...</p>
+        }
+        else if (platosDestacados.Count == 0)
+        {
+            <div class="alert alert-light">
+                Todavía no hay platos disponibles.
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+
+                @foreach (var plato in platosDestacados)
+                {
+                    <div class="col-md-6 col-lg-4">
+
+                        <div class="sp-product-card">
+
+                            @if (!string.IsNullOrWhiteSpace(plato.ImagenUrl))
+                            {
+                                <img src="@plato.ImagenUrl"
+                                     class="sp-product-image"
+                                     alt="@plato.Nombre" />
+                            }
+                            else
+                            {
+                                <div class="sp-product-image-placeholder">
+                                    🍽️
+                                </div>
+                            }
+
+                            <div class="sp-product-body">
+
+                                <span class="sp-category-label">
+                                    @plato.Categoria?.Nombre
+                                </span>
+
+                                <div class="d-flex justify-content-between gap-3">
+
+                                    <h3>
+                                        @plato.Nombre
+                                    </h3>
+
+                                    <strong class="sp-product-price">
+                                        $@plato.Precio.ToString("N2")
+                                    </strong>
+
+                                </div>
+
+                                <p>
+                                    @plato.Descripcion
+                                </p>
+
+                                <a href="/carta"
+                                   class="btn btn-primary w-100">
+                                    Ver en la carta
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+        }
+
+    </div>
+
+</section>
+
+@code {
+
+    private List<Plato>? platosDestacados;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+        platosDestacados = await db.Platos
+            .Include(p => p.Categoria)
+            .Where(p => p.Disponible)
+            .OrderBy(p => p.Nombre)
+            .Take(3)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+}

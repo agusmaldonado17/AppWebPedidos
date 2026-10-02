@@ -1,0 +1,223 @@
+﻿@page "/pedidos/eliminar/{Id:int}"
+
+@using AppWebPedidos.Data
+@using AppWebPedidos.Models
+@using AppWebPedidos.Components.Layout
+@using Microsoft.EntityFrameworkCore
+
+@layout AdminLayout
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<PageTitle>Eliminar pedido</PageTitle>
+
+
+@if (pedido is null)
+{
+    <p>Cargando pedido...</p>
+}
+else
+{
+    <div>
+
+        <a href="/pedidos"
+           class="sp-admin-back">
+            ← Volver a pedidos
+        </a>
+
+
+        <div class="sp-admin-page-header">
+
+            <div>
+
+                <h1>
+                    Eliminar pedido
+                </h1>
+
+                <p>
+                    Revisá la información antes de continuar.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="sp-delete-card">
+
+            <div class="sp-delete-icon">
+                !
+            </div>
+
+
+            <h2>
+                ¿Eliminar el pedido #@pedido.IdPedido?
+            </h2>
+
+
+            <p>
+                Esta acción eliminará permanentemente
+                el pedido y todos sus detalles asociados.
+            </p>
+
+
+            <div class="sp-delete-summary">
+
+                <div class="sp-delete-summary-row">
+
+                    <span>
+                        Cliente
+                    </span>
+
+                    <strong>
+                        @pedido.NombreCliente
+                    </strong>
+
+                </div>
+
+
+                <div class="sp-delete-summary-row">
+
+                    <span>
+                        Fecha
+                    </span>
+
+                    <strong>
+                        @pedido.Fecha.ToString("dd/MM/yyyy HH:mm")
+                    </strong>
+
+                </div>
+
+
+                <div class="sp-delete-summary-row">
+
+                    <span>
+                        Estado
+                    </span>
+
+                    <strong>
+                        @pedido.Estado
+                    </strong>
+
+                </div>
+
+
+                <div class="sp-delete-summary-row">
+
+                    <span>
+                        Productos
+                    </span>
+
+                    <strong>
+                        @pedido.Detalles.Sum(d => d.Cantidad)
+                    </strong>
+
+                </div>
+
+
+                <div class="sp-delete-summary-row">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong class="text-sp-orange">
+                        $@pedido.Total.ToString("N2")
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="alert alert-warning">
+
+                Esta acción no se puede deshacer.
+
+            </div>
+
+
+            <div class="sp-admin-form-actions">
+
+                <button type="button"
+                        class="sp-btn-danger"
+                        @onclick="ConfirmarEliminacion">
+
+                    Eliminar definitivamente
+
+                </button>
+
+
+                <a href="/pedidos"
+                   class="btn btn-outline-primary">
+
+                    Cancelar
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+
+    private Pedido? pedido;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        pedido = await db.Pedidos
+            .Include(p => p.Detalles)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                p => p.IdPedido == Id
+            );
+
+
+        if (pedido is null)
+        {
+            Navigation.NavigateTo("/pedidos");
+        }
+    }
+
+
+    private async Task ConfirmarEliminacion()
+    {
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        var pedidoDb =
+            await db.Pedidos.FindAsync(Id);
+
+
+        if (pedidoDb is null)
+        {
+            Navigation.NavigateTo("/pedidos");
+            return;
+        }
+
+
+        db.Pedidos.Remove(pedidoDb);
+
+
+        await db.SaveChangesAsync();
+
+
+        Navigation.NavigateTo("/pedidos");
+    }
+
+}
