@@ -14,6 +14,8 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 
 builder.Services.AddScoped<CarritoService>();
 
+builder.Services.AddHttpClient<IWhatsAppService, WhatsAppService>();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
