@@ -32,6 +32,9 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
+// Necesario para imágenes subidas en tiempo de ejecución
+app.UseStaticFiles();
+
 app.UseAntiforgery();
 
 app.MapStaticAssets();
