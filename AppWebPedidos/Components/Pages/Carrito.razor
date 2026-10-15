@@ -351,6 +351,7 @@
 
             </div>
         }
+     
 
     </div>
 
@@ -386,131 +387,109 @@
     }
 
 
-private async Task ConfirmarPedido()
-{
-    mensajeError = null;
-
-    if (!CarritoSvc.Items.Any())
+    private async Task ConfirmarPedido()
     {
-        mensajeError = "El carrito está vacío.";
-        return;
-    }
+        mensajeError = null;
 
-    if (string.IsNullOrWhiteSpace(nombreCliente))
-    {
-        mensajeError = "Ingresá el nombre del cliente.";
-        return;
-    }
+        if (!CarritoSvc.Items.Any())
+        {
+            mensajeError = "El carrito está vacío.";
+            return;
+        }
 
-    var pedido = new Pedido
-    {
-        NombreCliente = nombreCliente.Trim(),
+        if (string.IsNullOrWhiteSpace(nombreCliente))
+        {
+            mensajeError = "Ingresá el nombre del cliente.";
+            return;
+        }
 
-        Telefono = string.IsNullOrWhiteSpace(telefono)
-            ? null
-            : telefono.Trim(),
+        var pedido = new Pedido
+        {
+            NombreCliente = nombreCliente.Trim(),
 
-        Direccion = string.IsNullOrWhiteSpace(direccion)
-            ? null
-            : direccion.Trim(),
+            Telefono = string.IsNullOrWhiteSpace(telefono)
+                ? null
+                : telefono.Trim(),
 
-        Fecha = DateTime.Now,
+            Direccion = string.IsNullOrWhiteSpace(direccion)
+                ? null
+                : direccion.Trim(),
 
-        Estado = "Pendiente",
+            Fecha = DateTime.Now,
 
-        Total = CarritoSvc.Total
-    };
+            Estado = "Pendiente",
+
+            Total = CarritoSvc.Total
+        };
 
 
-    foreach (var item in CarritoSvc.Items)
-    {
-        pedido.Detalles.Add(
-            new DetallePedido
+        foreach (var item in CarritoSvc.Items)
+        {
+            pedido.Detalles.Add(
+                new DetallePedido
+                {
+                    IdPlato = item.IdPlato,
+                    Cantidad = item.Cantidad,
+                    PrecioUnitario = item.Precio,
+
+                    Observacion =
+                        string.IsNullOrWhiteSpace(item.Observacion)
+                            ? null
+                            : item.Observacion.Trim()
+                }
+            );
+        }
+
+
+        await using var db =
+            await DbFactory.CreateDbContextAsync();
+
+
+        db.Pedidos.Add(pedido);
+
+        await db.SaveChangesAsync();
+
+
+        var idPedido = pedido.IdPedido;
+
+
+        // ==========================================
+        // WHATSAPP
+        // ==========================================
+
+        if (!string.IsNullOrWhiteSpace(pedido.Telefono))
+        {
+            try
             {
-                IdPlato = item.IdPlato,
-                Cantidad = item.Cantidad,
-                PrecioUnitario = item.Precio,
-
-                Observacion =
-                    string.IsNullOrWhiteSpace(item.Observacion)
-                        ? null
-                        : item.Observacion.Trim()
+                await WhatsAppService
+                    .EnviarConfirmacionPedidoAsync(
+                        pedido.Telefono,
+                        pedido.NombreCliente,
+                        pedido.IdPedido,
+                        pedido.Total,
+                        pedido.Estado
+                    );
             }
+            catch (Exception ex)
+            {
+                // El pedido ya fue guardado.
+                // Si WhatsApp falla, no cancelamos el pedido.
+                Console.WriteLine(
+                    $"No se pudo enviar WhatsApp " +
+                    $"del pedido #{pedido.IdPedido}: {ex.Message}"
+                );
+            }
+        }
+
+
+        // Vaciar carrito
+        CarritoSvc.Vaciar();
+
+
+        // Ir a la pantalla de confirmación
+        Navigation.NavigateTo(
+            $"/pedido-confirmado/{idPedido}"
         );
     }
 
-
-    await using var db =
-        await DbFactory.CreateDbContextAsync();
-
-
-    db.Pedidos.Add(pedido);
-
-    await db.SaveChangesAsync();
-
-
-    var idPedido = pedido.IdPedido;
-
-
-    // ==========================================
-    // WHATSAPP
-    // ==========================================
-    
-    if (!string.IsNullOrWhiteSpace(pedido.Telefono))
-    {
-        try
-        {
-            await WhatsAppService
-                .EnviarConfirmacionPedidoAsync(
-                    pedido.Telefono,
-                    pedido.NombreCliente,
-                    pedido.IdPedido,
-                    pedido.Total,
-                    pedido.Estado
-                );
-        }
-        catch (Exception ex)
-        {
-            // El pedido ya fue guardado.
-            // Si WhatsApp falla, no cancelamos el pedido.
-            Console.WriteLine(
-                $"No se pudo enviar WhatsApp " +
-                $"del pedido #{pedido.IdPedido}: {ex.Message}"
-            );
-        }
-     }
-
-    }
-
-     /*
-    
-    
-    // Para plantilla temporal de Hello Word
-
-    if (!string.IsNullOrWhiteSpace(pedido.Telefono))
-    {
-        try
-        {
-            await WhatsAppService
-                .EnviarHelloWorldAsync(
-                    pedido.Telefono
-                );
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(
-                $"No se pudo enviar WhatsApp " +
-                $"del pedido #{pedido.IdPedido}: {ex.Message}"
-            );
-        }
-    }
-
-    CarritoSvc.Vaciar();
-
-
-    Navigation.NavigateTo(
-        $"/pedido-confirmado/{idPedido}"
-    );
- }
 }
-*/

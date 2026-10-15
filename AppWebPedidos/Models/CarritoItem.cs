@@ -1,4 +1,4 @@
-﻿namespace AppWebPedidos.Services
+﻿namespace AppWebPedidos.Models
 {
     public class CarritoItem
     {
